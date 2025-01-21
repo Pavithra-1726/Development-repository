@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE_NAME = 'devops-build' // Image name is fine
+        DOCKERHUB_USERNAME = 'bubbly17'  // Correct Docker Hub username
+        DOCKERHUB_CREDENTIALS_ID = 'Docker_pass' // Credentials ID for Docker Hub (ensure it exists in Jenkins)
+    }
+    stages {
+        stage('Clone Repo') { // This stage is fine
+            steps {
+                git branch: 'dev', url: 'https://github.com/Pavithra-1726/Development-repository.git'
+            }
+        }
+        stage('Build Docker Image') { // This stage is fine
+            steps {
+                script {
+                    docker.build("bubbly17/devops-build:latest") // Hardcoded image name; acceptable
+                }
+            }
+        }
+        stage('Push to Docker Hub - Dev') { // Pushes dev image; good setup
+            when {
+                branch 'dev' // Runs only on the dev branch; correct usage
+            }
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                        docker.image("bubbly17/devops-build:latest").push("dev") // Pushes the dev tag
+                    }
+                }
+            }
+        }
+        stage('Push to Docker Hub - Prod') { // Pushes prod image; good setup
+            when {
+                branch 'master' // Runs only on the master branch; correct usage
+            }
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                        docker.image("bubbly17/devops-build:latest").push("prod") // Pushes the prod tag
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs() // Cleans workspace after every run; good practice
+        }
+    }
+}
